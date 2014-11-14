@@ -214,6 +214,63 @@ namespace MicroOrm.Pocos.SqlGenerator
             return sqlBuilder.ToString();
         }
 
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="filters"></param>
+        /// <returns></returns>
+        public string GetInsertIfNotExists(object filters)
+        {
+            //Projection function
+            Func<PropertyMetadata, string> projectionFunction = (p) =>
+            {
+                if (!string.IsNullOrEmpty(p.Alias))
+                    return string.Format("[{0}].[{1}] AS [{2}]", this.TableName, p.ColumnName, p.Name);
+
+                return string.Format("[{0}].[{1}]", this.TableName, p.ColumnName);
+            };
+
+            var sqlBuilder = new StringBuilder();
+            sqlBuilder.AppendFormat("IF NOT EXISTS (SELECT {0} FROM [{1}].[{2}] WITH (NOLOCK)",
+                                    "TOP 1 1",
+                                    this.Scheme,
+                                    this.TableName);
+
+            //Properties of the dynamic filters object
+            var filterProperties = filters.GetType().GetProperties().Where(t => this.BaseProperties.Any(p => p.Name == t.Name)).Select(p => p.Name);
+
+            bool containsFilter = (filterProperties != null && filterProperties.Any());
+
+            if (containsFilter)
+                sqlBuilder.AppendFormat(" WHERE {0}) BEGIN ", this.ToWhere(filterProperties));
+            else
+                sqlBuilder.Append(") BEGIN ");
+
+            sqlBuilder.AppendLine(this.GetInsert());
+            sqlBuilder.AppendLine("END");
+            sqlBuilder.AppendLine("ELSE");
+            sqlBuilder.AppendLine("SELECT 0");
+
+            /*//Evaluates if this repository implements logical delete
+            if (this.LogicalDelete)
+            {
+                if (containsFilter)
+                    sqlBuilder.AppendFormat(" AND [{0}].[{1}] != {2}",
+                                            this.TableName,
+                                            this.StatusProperty.Name,
+                                            this.LogicalDeleteValue);
+                else
+                    sqlBuilder.AppendFormat(" WHERE [{0}].[{1}] != {2}",
+                                            this.TableName,
+                                            this.StatusProperty.Name,
+                                            this.LogicalDeleteValue);
+            }*/
+
+            return sqlBuilder.ToString();
+        }
+
         /// <summary>
         /// 
         /// </summary>
