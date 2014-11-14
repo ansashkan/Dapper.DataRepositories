@@ -84,6 +84,12 @@ namespace MicroOrm.Pocos.SqlGenerator
         /// 
         /// </summary>
         /// <returns></returns>
+        string GetInsertIfNotExists();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         string GetUpdate();
 
         /// <summary>

@@ -98,6 +98,35 @@ namespace Dapper.DataRepositories
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="instance"></param>
+        /// <returns></returns>
+        public virtual bool InsertIfNotExists(TEntity instance)
+        {
+            bool added = false;
+            var sql = SqlGenerator.GetInsertIfNotExists();
+
+            if (SqlGenerator.IsIdentity)
+            {
+                var newId = Connection.Query<decimal>(sql, instance).Single();
+                added = newId > 0;
+
+                if (added)
+                {
+                    var newParsedId = Convert.ChangeType(newId, SqlGenerator.IdentityProperty.PropertyInfo.PropertyType);
+                    SqlGenerator.IdentityProperty.PropertyInfo.SetValue(instance, newParsedId);
+                }
+            }
+            else
+            {
+                added = Connection.Execute(sql, instance) > 0;
+            }
+
+            return added;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
         public virtual bool Delete(object key)

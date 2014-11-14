@@ -62,11 +62,20 @@ namespace MicroOrm.Pocos.SqlGenerator
                         this.LogicalDeleteValue = Convert.ChangeType(enumValue, Enum.GetUnderlyingType(statusPropertyType));
                 }
             }
+
+            //Unique property used in InsertIfNotExists
+            this.UniqueProperties = props.Where(p => p.GetCustomAttributes<UniqueProperty>().Any()).Select(p => new PropertyMetadata(p));
         }
 
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public IEnumerable<PropertyMetadata> UniqueProperties { get; private set; }
+
 
         /// <summary>
         /// 
@@ -157,6 +166,49 @@ namespace MicroOrm.Pocos.SqlGenerator
                 sqlBuilder.AppendLine("DECLARE @NEWID NUMERIC(38, 0)");
                 sqlBuilder.AppendLine("SET	@NEWID = SCOPE_IDENTITY()");
                 sqlBuilder.AppendLine("SELECT @NEWID");
+            }
+
+            return sqlBuilder.ToString();
+        }
+
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <returns></returns>
+        public virtual string GetInsertIfNotExists()
+        {
+            //Enumerate the entity properties
+            //Identity property (if exists) has to be ignored
+            IEnumerable<PropertyMetadata> properties = (this.IsIdentity ?
+                                                        this.BaseProperties.Where(p => !p.Name.Equals(this.IdentityProperty.Name, StringComparison.InvariantCultureIgnoreCase)) :
+                                                        this.BaseProperties).ToList();
+
+            string columNames = string.Join(", ", properties.Select(p => string.Format("[{0}].[{1}]", this.TableName, p.ColumnName)));
+            string values = string.Join(", ", properties.Select(p => string.Format("@{0}", p.Name)));
+
+            string uniqueColumnNames = string.Join(", ",
+                UniqueProperties.Select(p => string.Format("[{0}].[{1}]", this.TableName, p.ColumnName)));
+            string uniqueValues = string.Join(", ", UniqueProperties.Select(p => string.Format("@{0}", p.Name)));
+
+            var sqlBuilder = new StringBuilder();
+            sqlBuilder.AppendFormat("IF NOT EXISTS (SELECT TOP 1 1 FROM [{0}].[{1}] WHERE {2}) BEGIN ",
+                                    this.Scheme,
+                                    this.TableName,
+                                    string.Join(", ", UniqueProperties.Select(p => string.Format("[{0}].[{1}] = @{2}", this.TableName, p.ColumnName, p.Name))));
+            sqlBuilder.AppendFormat("INSERT INTO [{0}].[{1}] {2} {3} ",
+                                    this.Scheme,
+                                    this.TableName,
+                                    string.IsNullOrEmpty(columNames) ? string.Empty : string.Format("({0})", columNames),
+                                    string.IsNullOrEmpty(values) ? string.Empty : string.Format(" VALUES ({0})", values));
+
+            //If the entity has an identity key, we create a new variable into the query in order to retrieve the generated id
+            if (this.IsIdentity)
+            {
+                sqlBuilder.AppendLine("DECLARE @NEWID NUMERIC(38, 0)");
+                sqlBuilder.AppendLine("SET	@NEWID = SCOPE_IDENTITY()");
+                sqlBuilder.AppendLine("SELECT @NEWID");
+                sqlBuilder.AppendLine("END ELSE SELECT 0");
             }
 
             return sqlBuilder.ToString();

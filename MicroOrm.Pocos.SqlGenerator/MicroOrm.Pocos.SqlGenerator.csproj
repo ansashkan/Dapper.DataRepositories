@@ -45,6 +45,7 @@
     <Compile Include="Attributes\KeyProperty.cs" />
     <Compile Include="Attributes\NonStored.cs" />
     <Compile Include="Attributes\StatusProperty.cs" />
+    <Compile Include="Attributes\UniqueProperty.cs" />
     <Compile Include="ISqlGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyMetadata.cs" />

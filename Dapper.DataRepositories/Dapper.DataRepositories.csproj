@@ -53,6 +53,12 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MicroOrm.Pocos.SqlGenerator\MicroOrm.Pocos.SqlGenerator.csproj">
+      <Project>{37efd853-cbff-4b7f-9568-615747ca7237}</Project>
+      <Name>MicroOrm.Pocos.SqlGenerator</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

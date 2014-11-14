@@ -41,6 +41,13 @@ namespace Dapper.DataRepositories
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="instance"></param>
+        /// <returns></returns>
+        bool InsertIfNotExists(TEntity instance);
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="key"></param>
         /// <returns></returns>
         bool Delete(object key);
